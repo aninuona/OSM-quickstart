@@ -90,6 +90,60 @@ void parse_osm(const char* filename) {
     } //main loop
 }
 
+void shortest_path(long long start, long long dest) {
+    std::unordered_map<long long, double> distances;
+    std::unordered_map<long long, long long> previous; // keep track of path
+    for (const auto& pair : nodes) {
+        distances[pair.first] = std::numeric_limits<double>::infinity();
+    }
+    distances[src] = 0;
+
+    auto compare = [&distances](long long left, long long right) {
+        return distances[left] > distances[right];
+    };
+
+    std::priority_queue<long long, std::vector<long long>, decltype(compare)> pq(compare); //copilot helped with this data structure
+    pq.push(start);
+
+    while (!pq.empty()) {
+        long long current = pq.top();
+        pq.pop();
+
+        if (current == dest) { // destination reached
+            // get the path from previous locations
+            std::stack<long long> path_stack;
+            long long node = dest;
+            while (previous.find(node) != previous.end()) {
+                path_stack.push(node);
+                node = previous[node];
+            }
+            path_stack.push(src);
+
+            std::cout << "total distance is " << distances[dest] << "\n";
+            std::cout << "path:\t";
+            while (!path_stack.empty()) {
+                std::cout << path_stack.top();
+                path_stack.pop();
+                if (!path_stack.empty()) std::cout << " -> ";
+            }
+            std::cout << "\n";
+            return;
+        }
+
+        for (const auto& neighbor : graph[current]) {
+            long long neighbor_node = neighbor.first;
+            double distance = distances[current] + 1.0; //
+            if (distance < distances[neighbor_node]) {
+                distances[neighbor_node] = distance;
+                previous[neighbor_node] = current;
+                pq.push(neighbor_node);
+            }
+        }
+    }
+
+    std::cout << "cannot find path from " << start << " to " << dest << "\n";
+}
+
 
 void print_graph() {
     for (const auto& node : graph) {
