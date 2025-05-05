@@ -164,6 +164,17 @@ int main(int argc, char* argv[]) {
 
     parse_osm(input_file);
 
+    graph[1][2] = "Road A";
+    graph[2][3] = "Road B";
+    graph[3][4] = "Road C";
+    nodes[1] = {0.0, 0.0};
+    nodes[2] = {0.1, 0.1};
+    nodes[3] = {0.2, 0.2};
+    nodes[4] = {0.3, 0.3};
+    long long start = 1;
+    long long destination = 4;
+    shortest_path(start, destination);
+
     // Print the graph with edge labels
     print_graph();
 
