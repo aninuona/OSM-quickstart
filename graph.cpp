@@ -96,7 +96,7 @@ void shortest_path(long long start, long long dest) {
     for (const auto& pair : nodes) {
         distances[pair.first] = std::numeric_limits<double>::infinity();
     }
-    distances[src] = 0;
+    distances[start] = 0;
 
     auto compare = [&distances](long long left, long long right) {
         return distances[left] > distances[right];
