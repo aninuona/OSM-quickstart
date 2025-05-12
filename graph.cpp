@@ -3,6 +3,7 @@
 #include <unordered_map> // hash table
 #include <vector> // dynamic array
 #include <string> // 
+#include <cmath>
 
 
 #include "tinyxml2.h"
@@ -81,7 +82,19 @@ void parse_osm(const char* filename) {
             for (size_t i = 1; i < way.node_refs.size(); ++i) {
                 long long node1 = way.node_refs[i - 1];
                 long long node2 = way.node_refs[i];
-                double distance = calculate_distance(node1,node2); 
+
+                    double distance = calculate_distance(node1,node2); //get distance
+
+                    //prefer highways (decrease their weight)
+                    if (way.is_highway) {
+                        distance *= 0.9; //reduce cost by 10%
+                    }
+
+                    //avoid alleys (increase their weight)
+                    if (way.name.find("alley") != std::string::npos) { //if the road name contains "alley"
+                        distance *= 1.2; //increase cost by 20%
+                    }
+
                     graph[node1][node2] = way.name;
                     if (!way.is_one_way)
                         graph[node2][node1] = way.name;  // Since roads are usually bidirectional
@@ -92,30 +105,30 @@ void parse_osm(const char* filename) {
 }
 
 double calculate_distance(long long node1, long long node2) {
-    if (nodes.find(node1) == nodes.end() || nodes.find(node2) == nodes.end()) {
+    if (nodes.find(node1) == nodes.end() || nodes.find(node2) == nodes.end()) { //special case node is end
         return NULL;
     }
 
-    double lat1 = nodes[node1].lat;
+    double lat1 = nodes[node1].lat; 
     double lon1 = nodes[node1].lon;
     double lat2 = nodes[node2].lat;
     double lon2 = nodes[node2].lon;
 
-    auto to_radians = [](double degree) { return degree * M_PI / 180.0; }; // formulas from internet
+    auto to_radians = [](double degree) { return degree * M_PI / 180.0; }; //formulas from internet
 
-    lat1 = to_radians(lat1);
+    lat1 = to_radians(lat1); //convert for calculation
     lon1 = to_radians(lon1);
     lat2 = to_radians(lat2);
     lon2 = to_radians(lon2);
 
-    double dlat = lat2 - lat1;
+    double dlat = lat2 - lat1; //get distance between each coordinate
     double dlon = lon2 - lon1;
 
     double a = std::sin(dlat / 2) * std::sin(dlat / 2) +
                std::cos(lat1) * std::cos(lat2) * std::sin(dlon / 2) * std::sin(dlon / 2);
     double c = 2 * std::atan2(std::sqrt(a), std::sqrt(1 - a));
 
-    return 3658.8 * c; // distance in miles
+    return 3958.8 * c; // distance in miles
 }
 
 void print_graph() {
@@ -136,17 +149,6 @@ int main(int argc, char* argv[]) {
     const char* input_file = argv[1];
 
     parse_osm(input_file);
-
-    graph[1][2] = "Road A";
-    graph[2][3] = "Road B";
-    graph[3][4] = "Road C";
-    nodes[1] = {0.0, 0.0};
-    nodes[2] = {0.1, 0.1};
-    nodes[3] = {0.2, 0.2};
-    nodes[4] = {0.3, 0.3};
-    long long start = 1;
-    long long destination = 4;
-    shortest_path(start, destination);
 
     // Print the graph with edge labels
     print_graph();
