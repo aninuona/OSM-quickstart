@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <limits>
+#include <algorithm> //chatgpt suggestion
 
 using namespace std;
 
@@ -97,57 +98,81 @@ void printDistances(const unordered_map<long long, double>& distance) {
     cout << "----------------------------\n";
 }
 
-void dijkstra(long long start) {
+void dijkstra(long long start, long long destination) {
+    // map to store the shortest distance from the start node to each node
     unordered_map<long long, double> distance;
     unordered_map<long long, long long> previous;
     unordered_map<long long, bool> visited;
 
-    for (auto& node : graph){
-        std::cout << "**************************\n";
-        std::cout << node.first <<"\n";
-        std::cout << "**************************\n";
+    // initialize distances to infinity
+    for (auto& node : graph) {
         distance[node.first] = numeric_limits<double>::infinity();
-        for (auto n:node.second)
-            distance[n.first]= numeric_limits<double>::infinity();
+        for (auto n : node.second)
+            distance[n.first] = numeric_limits<double>::infinity();
     }
-    distance[start]=0;
-  
+    distance[start] = 0;
+
+    // add the start node to the heap
     pushHeap({start, 0.0});
 
+    // process nodes in the heap
     while (!heap.empty()) {
         HeapNode current = popHeap();
         long long u = current.id;
 
+        //skip if the node is already visited
         if (visited[u]) continue;
         visited[u] = true;
 
-        cout << "Visiting node " << u << " (distance = " << current.dist << ")\n";
-        printDistances(distance);
+        //if destination reached
+        if (u == destination) {
+            cout << "reached destination node " << destination << ".\ntotal distance:\t" << distance[u] << "\n";
 
-        for (auto& neighbor : graph[u]) {
-            long long v = neighbor.first;
-            double weight = neighbor.second.second;
+            //reconstruct the path from start to destination
+            vector<long long> path;
+            for (long long at = destination; at != 0 && previous.find(at) != previous.end(); at = previous[at]) {
+                path.push_back(at);
+            }
+            reverse(path.begin(), path.end());
 
-            if (distance[u] + weight < distance[v]) {
-                distance[v] = distance[u] + weight;
-                previous[v] = u;
+            //print the path
+            cout << "path:\n";
+            for (size_t i = 0; i < path.size(); ++i) {
+                cout << path[i];
+                if (i < path.size() - 1) cout << " -> ";
+            }
+            cout << endl;
 
-                if (inHeap(v)) {
-                    decreaseKey(v, distance[v]);
+            return;
+        }
+
+        //chk current node's neighbors
+        for (const auto& neighbor : graph[u]) {
+            long long neighbor_node = neighbor.first; //(i changed v to neighbor_node to make it easier to read)
+            double edge_weight = neighbor.second.second;
+
+            //penalize U-turns
+            if (previous.find(u) != previous.end() && previous[u] == neighbor_node) { //if prev & next are same, it's a U-turn
+                edge_weight += 0.5; //add "penalty" extra distance
+            }
+
+            double new_distance = distance[u] + edge_weight;
+            if (new_distance < distance[neighbor_node]) {
+                distance[neighbor_node] = new_distance;
+                previous[neighbor_node] = u;
+
+                //update the heap with the new distance
+                if (inHeap(neighbor_node)) {
+                    decreaseKey(neighbor_node, distance[neighbor_node]);
                 } else {
-                    pushHeap({v, distance[v]});
+                    pushHeap({neighbor_node, distance[neighbor_node]});
                 }
             }
         }
     }
 
-    cout << "\nFinal shortest distances from node " << start << ":\n";
-    for (const auto& [node, dist] : distance) {
-        cout << "HeapNode " << node << ": ";
-        if (dist == numeric_limits<double>::infinity()) cout << "unreachable";
-        else cout << dist;
-        cout << endl;
-    }
+    //failed to find destination
+    cout << "destination node " << destination << " cannot be reached.\n";
 }
 
 int main() {
@@ -159,7 +184,7 @@ int main() {
     graph[3][5] = {"alley", 10.0};
     graph[4][5] = {"path", 2.0};
 
-    dijkstra(1);
+    dijkstra(1,5);
 
     return 0;
 }
