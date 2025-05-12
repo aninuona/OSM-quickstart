@@ -87,7 +87,7 @@ void parse_osm(const char* filename) {
 
                     //prefer highways (decrease their weight)
                     if (way.is_highway) {
-                        distance *= 0.9; //reduce cost by 10%
+                        distance *= 0.8; //reduce cost by 20%
                     }
 
                     //avoid alleys (increase their weight)
